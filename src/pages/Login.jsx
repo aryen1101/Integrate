@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Lock, ArrowRight, CheckCircle } from "lucide-react";
+import { login } from "../apiCalls/authCalls";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -35,46 +36,29 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      setIsSubmitting(true);
-      
-      setTimeout(() => {
-        const registeredUser = localStorage.getItem('registeredUser');
-        
-        const validCredentials = [
-          { email: "test@gmail.com", password: "test123" },
-        ];
-        
-        let isAuthenticated = false;
-        
-        isAuthenticated = validCredentials.some(
-          cred => cred.email === formData.email && cred.password === formData.password
-        );
-        
-        if (!isAuthenticated && registeredUser) {
-          const user = JSON.parse(registeredUser);
-          isAuthenticated = user.email === formData.email && user.password === formData.password;
-        }
-        
-        if (isAuthenticated) {
-          localStorage.setItem('currentUser', JSON.stringify({
-            email: formData.email,
-            isAuthenticated: true
-          }));
-          
-          window.location.href = '/dashboard';
-        } else {
-          setErrors({
-            password: "Invalid email or password"
-          });
-          setIsSubmitting(false);
-        }
-      }, 1000);
-    }
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validateForm()) return;
+
+  setIsSubmitting(true);
+  try {
+    const response = await login(formData);
+    alert(response.message || "Login successful!");
+
+    // Optionally store token or user info
+    localStorage.setItem("currentUser", JSON.stringify(response.user));
+
+    // Navigate to dashboard or homepage
+    window.location.href = "/dashboard";
+  } catch (error) {
+    const msg = error?.message || "Invalid email or password";
+    setErrors({ password: msg });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;

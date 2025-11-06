@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { User, Mail, Lock, ArrowRight, CheckCircle } from "lucide-react";
+import { register } from "../apiCalls/authCalls";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -38,33 +39,24 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      setIsSubmitting(true);
-      
-      // Simulate API call
-      setTimeout(() => {
-        // Store registered user data in localStorage
-        localStorage.setItem('registeredUser', JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        }));
-        
-        // Store pre-fill data for login page
-        localStorage.setItem('loginPreFill', JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        }));
-        
-        // Navigate to login page (replace with your router navigation)
-        window.location.href = '/login';
-        // For React Router: navigate('/login', { state: { fromRegister: true } });
-      }, 1000);
-    }
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validateForm()) return;
+
+  setIsSubmitting(true);
+  try {
+    const res = await register(formData);
+    alert(res.message || "Registration successful!");
+    window.location.href = "/login";
+  } catch (err) {
+    const msg = err.message || "Something went wrong during registration";
+    alert(msg);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,7 +65,6 @@ export default function Register() {
       [name]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -84,12 +75,10 @@ export default function Register() {
 
   const navigateToLogin = () => {
     window.location.href = '/login';
-    // For React Router: navigate('/login');
   };
 
   const navigateToHome = () => {
     window.location.href = '/';
-    // For React Router: navigate('/');
   };
 
   return (
