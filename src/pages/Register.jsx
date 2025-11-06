@@ -1,6 +1,20 @@
 import React, { useState } from "react";
-import { User, Mail, Lock, ArrowRight, CheckCircle } from "lucide-react";
+import { User, Mail, Lock, ArrowRight, CheckCircle, X } from "lucide-react";
 import { register } from "../apiCalls/authCalls";
+
+// Toast Component
+const Toast = ({ message, type, onClose }) => {
+  const bgColor = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+  
+  return (
+    <div className={`fixed top-6 right-6 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-[100] animate-slideIn`}>
+      <span>{message}</span>
+      <button onClick={onClose} className="hover:opacity-80 transition">
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+  );
+};
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -11,6 +25,12 @@ export default function Register() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -39,24 +59,25 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  setIsSubmitting(true);
-  try {
-    const res = await register(formData);
-    alert(res.message || "Registration successful!");
-    window.location.href = "/login";
-  } catch (err) {
-    const msg = err.message || "Something went wrong during registration";
-    alert(msg);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
+    setIsSubmitting(true);
+    try {
+      const res = await register(formData);
+      showToast(res.message || "Registration successful!", 'success');
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
+    } catch (err) {
+      const msg = err.message || "Something went wrong during registration";
+      showToast(msg, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,6 +104,15 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="font-sans bg-gray-950 text-gray-100 min-h-screen">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
+
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 bg-gray-950/80 backdrop-blur-lg border-b border-gray-800">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
@@ -274,6 +304,22 @@ const handleSubmit = async (e) => {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
